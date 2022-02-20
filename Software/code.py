@@ -609,7 +609,7 @@ print("starting Lora")
 # Bw31Cr48Sf4096 = (0x48, 0xc4, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 2048chips/symbol, CRC on. Slow+Extra long range
 try:
     rfm9x = ulora.LoRa(
-        spi, CS, modem_config=ulora.ModemConfig.Bw500Cr45Sf128, tx_power=config.power
+        spi, CS, modem_config=ulora.ModemConfig.Bw125Cr45Sf2048, tx_power=config.power
     )  # , interrupt=28 #rfm9x = ulora.LoRa(spi, CS, modem_config=ulora.ModemConfig.Bw125Cr48Sf4096,tx_power=23) #, interrupt=28
 except Exception:
     print("Lora module not detected !!!")  # None
