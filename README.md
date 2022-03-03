@@ -27,4 +27,4 @@ New Armachat based on Raspberry Pi PICO an Circuitpython code
 - experimental comments in code to test writing to text files.
 - added additional menu items - currently not developed.
 - added cpu temp to information screen
-- added a very rudimantary ping command - press 'p' to send a ping message. sends user name to reciever.
+- added a very rudimentary ping command - press 'p' to send a ping message. sends user name to reciever.
