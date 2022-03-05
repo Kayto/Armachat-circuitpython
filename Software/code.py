@@ -24,6 +24,11 @@ from adafruit_display_text import label
 from adafruit_st7789 import ST7789
 from config import config
 
+#Modem presets
+modemPreset = (0x72, 0x74, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
+modemPresetConfig = "c"
+modemPresetDescription = "d"
+
 messages = ["1|2|3|4|5|6|7|8|a1|a2|a3|a4|a5|a6|a7|a8"]
 # messages = []
 msgCounter = 0x00
@@ -137,7 +142,7 @@ def showMemory():
             oneItm = mem.split("|")
             line = 1
             if messages[msg].count("|N|") > 0:
-                print("Mesage mark as read:" + str(msg))
+                print("Message mark as read:" + str(msg))
                 messages[msg] = messages[msg].replace("|N|", "|R|")
                 ring()
             # ( destination+'|'+sender+'|'+messageID+'|'+hop+'|R|'+rssi +'|'+snr+'|'+timeStamp+'|'+packet_text,'utf-8')
@@ -354,17 +359,21 @@ def setup():
                 beep()
                 return 1
             if menu == 0:
-                if keys[0] == "s":
-                    config.spread = valueUp(7, 12, config.spread)
+                if keys[0] == "x":
+                    # config.spread = valueUp(7, 12, config.spread) #replaced with profiles 
+                    config.loraProfile=valueUp(1,6,config.loraProfile)
+					loraProfileSetup(config.loraProfile)
                 screen[0].text = "{:.d} Radio:".format(menu)
-                screen[1].text = "Frequency: {:5.2f}MHz".format(config.freq)
-                screen[2].text = "[S] Spread {:.d}".format(config.spread)
-                screen[3].text = "Power {:.d}".format(config.power)
-                screen[4].text = "Bandwidth {:.d}".format(config.bandwidth)
-                screen[5].text = "Coding rate {:.d}".format(config.codingRate)
+                screen[1].text = "[F] Frequency: {:5.2f}MHz".format(config.freq)
+                # screen[2].text = "[S] Spread {:.d}".format(config.spread) #replaced with profiles      
+                screen[2].text = "[P] Power {:.d}".format(config.power)
+                # screen[4].text = "Bandwidth {:.d}".format(config.bandwidth) #replaced with profiles
+                # screen[5].text = "Coding rate {:.d}".format(config.codingRate) #replaced with profiles
+				screen[4].text = modemPresetConfig
+				screen[5].text = modemPresetDescription                
                 screen[6].text = ""
                 screen[7].text = ""
-                screen[8].text = "Ready ..."
+                screen[8].text = "[ALT] Exit [Ent] < [Del] >"
                 screen.show()
             elif menu == 1:
                 if keys[0] == "n":
@@ -379,7 +388,7 @@ def setup():
                 screen[5].text = "[G] Group 1:{}".format(config.myGroup1)
                 screen[6].text = "[I] ID:     {}".format(config.myID)
                 screen[7].text = "[E] Encryption {}"
-                screen[8].text = "Ready ..."
+                screen[8].text = "[ALT] Exit [Ent] < [Del] >"
                 screen.show()
             elif menu == 2:
                 screen[0].text = "{:.d} Display:".format(menu)
@@ -390,7 +399,7 @@ def setup():
                 screen[5].text = ""
                 screen[6].text = ""
                 screen[7].text = ""
-                screen[8].text = "Ready ..."
+                screen[8].text = "[ALT] Exit [Ent] < [Del] >"
                 screen.show()
             elif menu == 3:
                 if keys[0] == "v":
@@ -404,7 +413,7 @@ def setup():
                 screen[5].text = ""
                 screen[6].text = ""
                 screen[7].text = ""
-                screen[8].text = "Ready ..."
+                screen[8].text = "[ALT] Exit [Ent] < [Del] >"
                 screen.show()
 
 
@@ -414,6 +423,7 @@ def editor(text):
     editLine = 0
     editText = text
     layoutName = "abc"
+    EditorScreen[8].text = "[Ent] confirm"
     EditorScreen.show()
     line = ["0", "1", "2", "3", "4", "5", "6"]
     line[0] = text
@@ -447,17 +457,20 @@ def editor(text):
                 config.rows, config.cols, config.keys1
             )
             layoutName = "abc"
+            HotKeysHelp = "[Ent] Send    [Del] Delete"
         elif layout == 1:
             keypad = adafruit_matrixkeypad.Matrix_Keypad(
                 config.rows, config.cols, config.keys2
             )
             layoutName = "123"
+            HotKeysHelp = "[Ent] < Left  [Del] > Right"
         elif layout == 2:
             keypad = adafruit_matrixkeypad.Matrix_Keypad(
                 config.rows, config.cols, config.keys3
             )
             layoutName = "ABC"
-
+            HotKeysHelp = "[Ent] Down    [Del] Up"
+            
         keys = keypad.pressed_keys
 
         if keys:
@@ -518,7 +531,35 @@ def editor(text):
                 (editText[0:cursor]) + "_" + (editText[cursor:])
             )  # line[editLine]
             EditorScreen.show()
+            
+def loraProfileSetup (profile):
+    global modemPresetConfig
+    global modemPresetDescription
 
+    if profile == 1:
+        modemPreset = (0x72, 0x74, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
+        modemPresetConfig = "Bw125Cr45Sf128"
+        modemPresetDescription = "Default medium range"
+    if profile == 2:
+        modemPreset = (0x92, 0x74, 0x04) #< Bw = 500 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Fast+short range
+        modemPresetConfig = "Bw500Cr45Sf128"
+        modemPresetDescription = "Fast+short range"
+    if profile == 3:
+        modemPreset = (0x48, 0x94, 0x04) #< Bw = 31.25 kHz, Cr = 4/8, Sf = 512chips/symbol, CRC on. Slow+long range
+        modemPresetConfig = "Bw31_25Cr48Sf512"
+        modemPresetDescription = "Slow+long range"
+    if profile == 4:
+        modemPreset = (0x78, 0xc4, 0x0c) #< Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, low data rate, CRC on. Slow+long range
+        modemPresetConfig = "Bw125Cr48Sf4096"
+        modemPresetDescription = "Slow+long range"
+    if profile == 5:
+        modemPreset = (0x72, 0xb4, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 2048chips/symbol, CRC on. Slow+long range
+        modemPresetConfig = "Bw125Cr45Sf2048"
+        modemPresetDescription = "Slow+long range"
+    if profile == 6:
+        modemPreset = (0x48, 0xc4, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 2048chips/symbol, CRC on. Slow+Extra long range
+        modemPresetConfig = "Bw31Cr48Sf4096"
+        modemPresetDescription = "Slow+Extra long range"
 
 #          if keys[0] == "ent":
 #              beep()
@@ -585,32 +626,26 @@ display.show(text_area)
 
 
 # font
+font_file = "fonts/neep-24.pcf"
 # font_file = "fonts/neep-iso8859-1-12x24.bdf"
 # font_file = "fonts/gohufont-14.bdf"
 # font_file = "fonts/Gomme10x20n.bdf"
-# font = bitmap_font.load_font(font_file)
-font = terminalio.FONT
-
+font = bitmap_font.load_font(font_file)
+# font = terminalio.FONT
 
 # Define pins connected to the chip.
 CS = digitalio.DigitalInOut(board.GP13)
 RESET = digitalio.DigitalInOut(board.GP17)
 spi = busio.SPI(board.GP10, MOSI=board.GP11, MISO=board.GP12)
+
 # Initialze radio
-
-
-RADIO_FREQ_MHZ = config.freq  # 869.45  # Frequency of the radio in Mhz. Must match your
+RADIO_FREQ_MHZ = config.freq  # 869.45  # Frequency of the radio in Mhz. Must match your module
 print("starting Lora")
-# Bw125Cr45Sf128 = (0x72, 0x74, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
-# Bw500Cr45Sf128 = (0x92, 0x74, 0x04) #< Bw = 500 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Fast+short range
-# Bw31_25Cr48Sf512 = (0x48, 0x94, 0x04) #< Bw = 31.25 kHz, Cr = 4/8, Sf = 512chips/symbol, CRC on. Slow+long range
-# Bw125Cr48Sf4096 = (0x78, 0xc4, 0x0c) #/< Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, low data rate, CRC on. Slow+long range
-# Bw125Cr45Sf2048 = (0x72, 0xb4, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 2048chips/symbol, CRC on. Slow+long range
-# Bw31Cr48Sf4096 = (0x48, 0xc4, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 2048chips/symbol, CRC on. Slow+Extra long range
+# for profiles see config.py
 try:
     rfm9x = ulora.LoRa(
-        spi, CS, modem_config=ulora.ModemConfig.Bw125Cr45Sf2048, tx_power=config.power
-    )  # , interrupt=28 #rfm9x = ulora.LoRa(spi, CS, modem_config=ulora.ModemConfig.Bw125Cr48Sf4096,tx_power=23) #, interrupt=28
+        spi, CS, modem_config=modemPreset,tx_power=config.power
+    ) 
 except Exception:
     print("Lora module not detected !!!")  # None
 
@@ -621,7 +656,7 @@ EditorScreen = SimpleTextDisplay(
     display=display,
     title="Armachat EDITOR",
     title_scale=1,
-    text_scale=2,
+    text_scale=1,
     colors=(
         SimpleTextDisplay.YELLOW,
         SimpleTextDisplay.WHITE,
@@ -640,7 +675,7 @@ screen = SimpleTextDisplay(
     font=font,
     title="Armachat messenger:",
     title_scale=1,
-    text_scale=2,
+    text_scale=1,
     colors=(
         SimpleTextDisplay.GREEN,
         SimpleTextDisplay.WHITE,
@@ -753,7 +788,7 @@ while True:
         keys = keypad.pressed_keys
         while not keys:
             keys = keypad.pressed_keys
-
+# added a simple ping message
     if keys[0] == "p":
         beep()
         text = ""
