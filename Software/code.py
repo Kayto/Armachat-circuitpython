@@ -369,8 +369,8 @@ def setup():
                 screen[2].text = "[P] Power {:.d}".format(config.power)
                 # screen[4].text = "Bandwidth {:.d}".format(config.bandwidth) #replaced with profiles
                 # screen[5].text = "Coding rate {:.d}".format(config.codingRate) #replaced with profiles
-				screen[4].text = modemPresetConfig
-				screen[5].text = modemPresetDescription                
+		screen[4].text = modemPresetConfig
+		screen[5].text = modemPresetDescription                
                 screen[6].text = ""
                 screen[7].text = ""
                 screen[8].text = "[ALT] Exit [Ent] < [Del] >"
