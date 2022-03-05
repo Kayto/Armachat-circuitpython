@@ -27,8 +27,8 @@ from config import config
 # Modem presets
 modemPreset = (0x72, 0x74, 0x04)
 # < Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
-modemPresetConfig = "c"
-modemPresetDescription = "d"
+modemPresetConfig = "Update Profile to"
+modemPresetDescription = "view Modem details..."
 
 messages = ["1|2|3|4|5|6|7|8|a1|a2|a3|a4|a5|a6|a7|a8"]
 # messages = []
