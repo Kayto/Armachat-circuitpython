@@ -24,8 +24,9 @@ from adafruit_display_text import label
 from adafruit_st7789 import ST7789
 from config import config
 
-#Modem presets
-modemPreset = (0x72, 0x74, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
+# Modem presets
+modemPreset = (0x72, 0x74, 0x04)
+# < Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
 modemPresetConfig = "c"
 modemPresetDescription = "d"
 
@@ -360,17 +361,21 @@ def setup():
                 return 1
             if menu == 0:
                 if keys[0] == "x":
-                    # config.spread = valueUp(7, 12, config.spread) #replaced with profiles 
-                    config.loraProfile=valueUp(1,6,config.loraProfile)
-		    loraProfileSetup(config.loraProfile)
+                    # config.spread = valueUp(7, 12, config.spread) #replaced with profiles
+                    config.loraProfile = valueUp(1, 6, config.loraProfile)
+                    loraProfileSetup(config.loraProfile)
                 screen[0].text = "{:.d} Radio:".format(menu)
                 screen[1].text = "[F] Frequency: {:5.2f}MHz".format(config.freq)
-                # screen[2].text = "[S] Spread {:.d}".format(config.spread) #replaced with profiles      
+                # screen[2].text = "[S] Spread {:.d}".format(config.spread)
+                # replaced with profiles
                 screen[2].text = "[P] Power {:.d}".format(config.power)
-                # screen[4].text = "Bandwidth {:.d}".format(config.bandwidth) #replaced with profiles
-                # screen[5].text = "Coding rate {:.d}".format(config.codingRate) #replaced with profiles
-		screen[4].text = modemPresetConfig
-		screen[5].text = modemPresetDescription                
+                # screen[4].text = "Bandwidth {:.d}".format(config.bandwidth)
+                # replaced with profiles
+                # screen[5].text = "Coding rate {:.d}".format(config.codingRate)
+                # replaced with profiles
+                screen[3].text = "[X] Profile {:.d}".format(config.loraProfile)
+                screen[4].text = modemPresetConfig
+                screen[5].text = modemPresetDescription
                 screen[6].text = ""
                 screen[7].text = ""
                 screen[8].text = "[ALT] Exit [Ent] < [Del] >"
@@ -470,7 +475,7 @@ def editor(text):
             )
             layoutName = "ABC"
             HotKeysHelp = "[Ent] Down    [Del] Up"
-            
+
         keys = keypad.pressed_keys
 
         if keys:
@@ -531,13 +536,14 @@ def editor(text):
                 (editText[0:cursor]) + "_" + (editText[cursor:])
             )  # line[editLine]
             EditorScreen.show()
-            
+
 def loraProfileSetup (profile):
     global modemPresetConfig
     global modemPresetDescription
 
     if profile == 1:
-        modemPreset = (0x72, 0x74, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
+        modemPreset = (0x72, 0x74, 0x04)
+        # < Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
         modemPresetConfig = "Bw125Cr45Sf128"
         modemPresetDescription = "Default medium range"
     if profile == 2:
@@ -644,8 +650,8 @@ print("starting Lora")
 # for profiles see config.py
 try:
     rfm9x = ulora.LoRa(
-        spi, CS, modem_config=modemPreset,tx_power=config.power
-    ) 
+        spi, CS, modem_config=modemPreset, tx_power=config.power
+    )
 except Exception:
     print("Lora module not detected !!!")  # None
 
@@ -819,6 +825,32 @@ while True:
         if keys[0] == "a":
             KBL.value = False
             ring()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
