@@ -362,7 +362,7 @@ def setup():
                 if keys[0] == "x":
                     # config.spread = valueUp(7, 12, config.spread) #replaced with profiles 
                     config.loraProfile=valueUp(1,6,config.loraProfile)
-					loraProfileSetup(config.loraProfile)
+		    loraProfileSetup(config.loraProfile)
                 screen[0].text = "{:.d} Radio:".format(menu)
                 screen[1].text = "[F] Frequency: {:5.2f}MHz".format(config.freq)
                 # screen[2].text = "[S] Spread {:.d}".format(config.spread) #replaced with profiles      
