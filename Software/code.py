@@ -18,7 +18,7 @@ import adafruit_matrixkeypad
 # import adafruit_rfm9x
 from binascii import hexlify
 from adafruit_simple_text_display import SimpleTextDisplay
-# from adafruit_bitmap_font import bitmap_font
+from adafruit_bitmap_font import bitmap_font
 from pwmio import PWMOut
 from adafruit_display_text import label
 from adafruit_st7789 import ST7789
