@@ -1,4 +1,5 @@
 import time
+
 # import alarm
 import board
 import busio
@@ -9,31 +10,28 @@ import gc
 import os
 import aesio
 import random
-import digitalio
-import microcontroller
-import ulora
+from binascii import hexlify
+
+# import microcontroller
+from adafruit_simple_text_display import SimpleTextDisplay
 
 # import adafruit_imageload
 import adafruit_matrixkeypad
-# import adafruit_rfm9x
-from binascii import hexlify
-from adafruit_simple_text_display import SimpleTextDisplay
-from adafruit_bitmap_font import bitmap_font
+
+# from adafruit_bitmap_font import bitmap_font
 from pwmio import PWMOut
+
 from adafruit_display_text import label
 from adafruit_st7789 import ST7789
 from config import config
+import digitalio
 
-# Modem presets
-modemPreset = (0x72, 0x74, 0x04)
-# < Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
-modemPresetConfig = "Update Profile to"
-modemPresetDescription = "view Modem details..."
+# import adafruit_rfm9x
+import ulora
 
 messages = ["1|2|3|4|5|6|7|8|a1|a2|a3|a4|a5|a6|a7|a8"]
-# messages = []
 msgCounter = 0x00
-message = " "
+message = ""
 
 
 def readKeyboard():
@@ -100,12 +98,22 @@ def clearScreen(stat=""):
         screen[i].text = ""
 
 
+def screenSafeText(txt=""):
+    retText = txt
+
+    for x in range(32):
+        if x != 9 and x != 10 and x != 13:
+            retText = retText.replace(chr(x), "")
+
+    return retText
+
 def showMemory():
     msg = 0
     clearScreen()
     ring()
     screen.show()
     while True:
+        time.sleep(0.1)  # a little delay here helps avoid debounce annoyances
         keys = keypad.pressed_keys
         if keys:
             beep()
@@ -120,21 +128,27 @@ def showMemory():
                 return 1
             if keys[0] == "s":
                 beep()
-                with open("messages.txt", "a") as f:
-                    for line in messages:
-                        print(line)
-                        f.write(line + "\n")
-                # f.close()
+                try:
+                    with open("messages.txt", "a") as f:
+                        for line in messages:
+                            print(line)
+                            f.write(line + "\n")
+                    # f.close()
+                except OSError:
+                    print("messages.txt - Read Only File System")
             if keys[0] == "r":
                 beep()
                 messages.clear()
-                with open("messages.txt", "r") as f:
-                    msgf = f.readlines()
-                    print("Reading messages:")
-                    for line in msgf:
-                        print(line)
-                        messages.append(line)
-                # f.close()
+                try:
+                    with open("messages.txt", "r") as f:
+                        msgf = f.readlines()
+                        print("Reading messages:")
+                        for line in msgf:
+                            print(line)
+                            messages.append(line)
+                    # f.close()
+                except OSError:
+                    print("messages.txt does not exist")
 
             # for f in messages[message]
             clearScreen()
@@ -143,10 +157,11 @@ def showMemory():
             oneItm = mem.split("|")
             line = 1
             if messages[msg].count("|N|") > 0:
-                print("Message mark as read:" + str(msg))
+                print("Mesage mark as read:" + str(msg))
                 messages[msg] = messages[msg].replace("|N|", "|R|")
                 ring()
-            # ( destination+'|'+sender+'|'+messageID+'|'+hop+'|R|'+rssi +'|'+snr+'|'+timeStamp+'|'+packet_text,'utf-8')
+            # ( destination+'|'+sender+'|'+messageID+'|'+hop+'|R|'+rssi+'|'+snr+'|'+
+            # timeStamp+'|'+packet_text,'utf-8')
             if keys[0] == " ":
                 screen[1].text = "Status:" + oneItm[4]
                 screen[2].text = "To:" + oneItm[0]
@@ -156,13 +171,13 @@ def showMemory():
                 screen[6].text = "RSSI:" + oneItm[5] + " SNR:" + oneItm[6]
                 screen[7].text = "Time:" + oneItm[7]
             else:
-                screen[1].text = oneItm[8]
-                screen[2].text = oneItm[9]
-                screen[3].text = oneItm[10]
-                screen[4].text = oneItm[11]
-                screen[5].text = oneItm[12]
-                screen[6].text = oneItm[13]
-                screen[7].text = oneItm[14]
+                screen[1].text = screenSafeText(oneItm[8])
+                screen[2].text = screenSafeText(oneItm[9])
+                screen[3].text = screenSafeText(oneItm[10])
+                screen[4].text = screenSafeText(oneItm[11])
+                screen[5].text = screenSafeText(oneItm[12])
+                screen[6].text = screenSafeText(oneItm[13])
+                screen[7].text = screenSafeText(oneItm[14])
 
 
 def sendMessage(text):
@@ -251,7 +266,7 @@ def receiveMessage():
         header = packet[0:16]
         print("Received header:")
         print(hexlify(header))
-        if packet[16] == 33:  # 33 = sybol ! it is delivery confirmation
+        if packet[15] == 33:  # 33 = sybol ! it is delivery confirmation
             print("Delivery comfirmation")
             changeMessageStatus(
                 msgID=str(hexlify(packet[8:12]), "utf-8"), old="|S|", new="|D|"
@@ -301,6 +316,13 @@ def receiveMessage():
             + packet_text,
             "utf-8",
         )
+
+        msgPart = storedMsg.split("|")
+
+        while len(msgPart) < 16:
+            storedMsg = storedMsg + "|"
+            msgPart = storedMsg.split("|")
+
         # print("RSSI:{:.1f}".format(rssi))
         print("SNR:" + snr + " RSSI:" + rssi)
         # HEADER
@@ -316,7 +338,7 @@ def receiveMessage():
         print("Response header ...")
         print(hexlify(header))
         rfm9x.send(list(bytearray(header + "!")), 0)  # (list(outp), 0)
-        print("Comfirmation send ...")
+        print("Confirmation send ...")
         LED.value = False
     return packet_text
 
@@ -344,9 +366,6 @@ def setup():
     ring()
     screen.show()
     while True:
-        # with open("user.txt", "r") as f:
-        #    user = f.readline()
-        #    f.close()
         keys = keypad.pressed_keys
         if keys:
             beep()
@@ -360,32 +379,22 @@ def setup():
                 beep()
                 return 1
             if menu == 0:
-                if keys[0] == "x":
-                    # config.spread = valueUp(7, 12, config.spread) #replaced with profiles
-                    config.loraProfile = valueUp(1, 6, config.loraProfile)
-                    loraProfileSetup(config.loraProfile)
+                if keys[0] == "s":
+                    config.spread = valueUp(7, 12, config.spread)
                 screen[0].text = "{:.d} Radio:".format(menu)
                 screen[1].text = "[F] Frequency: {:5.2f}MHz".format(config.freq)
-                # screen[2].text = "[S] Spread {:.d}".format(config.spread)
-                # replaced with profiles
                 screen[2].text = "[P] Power {:.d}".format(config.power)
-                # screen[4].text = "Bandwidth {:.d}".format(config.bandwidth)
-                # replaced with profiles
-                # screen[5].text = "Coding rate {:.d}".format(config.codingRate)
-                # replaced with profiles
-                screen[3].text = "[X] Profile {:.d}".format(config.loraProfile)
-                screen[4].text = modemPresetConfig
-                screen[5].text = modemPresetDescription
+                screen[3].text = "[X] Preset"
+                screen[4].text = ""
+                screen[5].text = ""
                 screen[6].text = ""
                 screen[7].text = ""
-                screen[8].text = "[ALT] Exit [Ent] < [Del] >"
+                screen[8].text = "Ready ..."
                 screen.show()
             elif menu == 1:
                 if keys[0] == "n":
                     config.myName = editor(text=config.myName)
-                    # config.myName = editor(text=user)
                 screen[0].text = "{:.d} Identity:".format(menu)
-                # screen[1].text = "[N] Name: " + (user)
                 screen[1].text = "[N] Name: {} ".format(config.myName)
                 screen[2].text = "------"
                 screen[3].text = "[G] Group 3:{}".format(config.myGroup3)
@@ -393,7 +402,7 @@ def setup():
                 screen[5].text = "[G] Group 1:{}".format(config.myGroup1)
                 screen[6].text = "[I] ID:     {}".format(config.myID)
                 screen[7].text = "[E] Encryption {}"
-                screen[8].text = "[ALT] Exit [Ent] < [Del] >"
+                screen[8].text = "Ready ..."
                 screen.show()
             elif menu == 2:
                 screen[0].text = "{:.d} Display:".format(menu)
@@ -404,7 +413,7 @@ def setup():
                 screen[5].text = ""
                 screen[6].text = ""
                 screen[7].text = ""
-                screen[8].text = "[ALT] Exit [Ent] < [Del] >"
+                screen[8].text = "Ready ..."
                 screen.show()
             elif menu == 3:
                 if keys[0] == "v":
@@ -418,7 +427,7 @@ def setup():
                 screen[5].text = ""
                 screen[6].text = ""
                 screen[7].text = ""
-                screen[8].text = "[ALT] Exit [Ent] < [Del] >"
+                screen[8].text = "Ready ..."
                 screen.show()
 
 
@@ -428,7 +437,6 @@ def editor(text):
     editLine = 0
     editText = text
     layoutName = "abc"
-    EditorScreen[8].text = "[Ent] confirm"
     EditorScreen.show()
     line = ["0", "1", "2", "3", "4", "5", "6"]
     line[0] = text
@@ -462,19 +470,16 @@ def editor(text):
                 config.rows, config.cols, config.keys1
             )
             layoutName = "abc"
-            HotKeysHelp = "[Ent] Send    [Del] Delete"
         elif layout == 1:
             keypad = adafruit_matrixkeypad.Matrix_Keypad(
                 config.rows, config.cols, config.keys2
             )
             layoutName = "123"
-            HotKeysHelp = "[Ent] < Left  [Del] > Right"
         elif layout == 2:
             keypad = adafruit_matrixkeypad.Matrix_Keypad(
                 config.rows, config.cols, config.keys3
             )
             layoutName = "ABC"
-            HotKeysHelp = "[Ent] Down    [Del] Up"
 
         keys = keypad.pressed_keys
 
@@ -537,53 +542,13 @@ def editor(text):
             )  # line[editLine]
             EditorScreen.show()
 
-def loraProfileSetup (profile):
-    global modemPresetConfig
-    global modemPresetDescription
-
-    if profile == 1:
-        modemPreset = (0x72, 0x74, 0x04)
-        # < Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Default medium range
-        modemPresetConfig = "Bw125Cr45Sf128"
-        modemPresetDescription = "Default medium range"
-    if profile == 2:
-        modemPreset = (0x92, 0x74, 0x04) #< Bw = 500 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on. Fast+short range
-        modemPresetConfig = "Bw500Cr45Sf128"
-        modemPresetDescription = "Fast+short range"
-    if profile == 3:
-        modemPreset = (0x48, 0x94, 0x04) #< Bw = 31.25 kHz, Cr = 4/8, Sf = 512chips/symbol, CRC on. Slow+long range
-        modemPresetConfig = "Bw31_25Cr48Sf512"
-        modemPresetDescription = "Slow+long range"
-    if profile == 4:
-        modemPreset = (0x78, 0xc4, 0x0c) #< Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, low data rate, CRC on. Slow+long range
-        modemPresetConfig = "Bw125Cr48Sf4096"
-        modemPresetDescription = "Slow+long range"
-    if profile == 5:
-        modemPreset = (0x72, 0xb4, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 2048chips/symbol, CRC on. Slow+long range
-        modemPresetConfig = "Bw125Cr45Sf2048"
-        modemPresetDescription = "Slow+long range"
-    if profile == 6:
-        modemPreset = (0x48, 0xc4, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 2048chips/symbol, CRC on. Slow+Extra long range
-        modemPresetConfig = "Bw31Cr48Sf4096"
-        modemPresetDescription = "Slow+Extra long range"
-
-#          if keys[0] == "ent":
-#              beep()
-#             for r in range(7):
-#                user = text + line[r] + "|"
-#               with open("/user.txt", "n") as fp:
-#                  fp.write('{}\n'.format(user))
-#                 fp.flush()
-#        return text
-
 
 # ----------------------FUNCTIONS---------------------------
-# configure picomputer devices (display, LED, Speaker)
-# picomputer.init()
-# Define the onboard LED
+
 # with open('x.txt', 'w') as f:
-#    f.write(b'abcdefg')
+#    f.write("Hello world!\r\n")
 #    f.close()
+
 
 if config.model == "compact":
     KBL = digitalio.DigitalInOut(board.GP14)
@@ -632,26 +597,38 @@ display.show(text_area)
 
 
 # font
-font_file = "fonts/neep-24.pcf"
 # font_file = "fonts/neep-iso8859-1-12x24.bdf"
 # font_file = "fonts/gohufont-14.bdf"
 # font_file = "fonts/Gomme10x20n.bdf"
-font = bitmap_font.load_font(font_file)
-# font = terminalio.FONT
+# font = bitmap_font.load_font(font_file)
+font = terminalio.FONT
+
 
 # Define pins connected to the chip.
 CS = digitalio.DigitalInOut(board.GP13)
 RESET = digitalio.DigitalInOut(board.GP17)
 spi = busio.SPI(board.GP10, MOSI=board.GP11, MISO=board.GP12)
-
 # Initialze radio
-RADIO_FREQ_MHZ = config.freq  # 869.45  # Frequency of the radio in Mhz. Must match your module
+
+
+RADIO_FREQ_MHZ = config.freq  # 869.45  # Frequency of the radio in Mhz. Must match your
 print("starting Lora")
-# for profiles see config.py
+# Bw125Cr45Sf128 = (0x72, 0x74, 0x04) #< Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol,
+#   CRC on. Default medium range
+# Bw500Cr45Sf128 = (0x92, 0x74, 0x04) #< Bw = 500 kHz, Cr = 4/5, Sf = 128chips/symbol,
+#   CRC on. Fast+short range
+# Bw31_25Cr48Sf512 = (0x48, 0x94, 0x04) #< Bw = 31.25 kHz, Cr = 4/8,
+#   Sf = 512chips/symbol, CRC on. Slow+long range
+# Bw125Cr48Sf4096 = (0x78, 0xc4, 0x0c) #/< Bw = 125 kHz, Cr = 4/8,
+#   Sf = 4096chips/symbol, low data rate, CRC on. Slow+long range
+# Bw125Cr45Sf2048 = (0x72, 0xb4, 0x04) #< Bw = 125 kHz, Cr = 4/5,
+#   Sf = 2048chips/symbol, CRC on. Slow+long range
+# Bw31Cr48Sf4096 = (0x48, 0xc4, 0x04) #< Bw = 125 kHz, Cr = 4/5,
+#   Sf = 2048chips/symbol, CRC on. Slow+Extra long range
 try:
     rfm9x = ulora.LoRa(
-        spi, CS, modem_config=modemPreset, tx_power=config.power
-    )
+        spi, CS, modem_config=ulora.ModemConfig.Bw500Cr45Sf128, tx_power=config.power
+    )  # , interrupt=28
 except Exception:
     print("Lora module not detected !!!")  # None
 
@@ -662,7 +639,7 @@ EditorScreen = SimpleTextDisplay(
     display=display,
     title="Armachat EDITOR",
     title_scale=1,
-    text_scale=1,
+    text_scale=2,
     colors=(
         SimpleTextDisplay.YELLOW,
         SimpleTextDisplay.WHITE,
@@ -681,7 +658,7 @@ screen = SimpleTextDisplay(
     font=font,
     title="Armachat messenger:",
     title_scale=1,
-    text_scale=1,
+    text_scale=2,
     colors=(
         SimpleTextDisplay.GREEN,
         SimpleTextDisplay.WHITE,
@@ -697,10 +674,6 @@ screen = SimpleTextDisplay(
 print("Screen ready,Free memory:")
 print(gc.mem_free())
 while True:
-    # with open("user.txt", "r") as f:
-    #    user = f.readline()
-    #    f.close()
-    # screen[0].text = ">(" + str(config.myID) + ")" + user
     screen[0].text = ">(" + str(config.myID) + ")" + config.myName
     screen[1].text = "[N] New message"
     screen[2].text = "To:(" + str(config.dest0) + ")"
@@ -708,8 +681,8 @@ while True:
     screen[4].text = (
         "New:" + str(countMessages("|N|")) + " Undelivered:" + str(countMessages("|S|"))
     )
-    screen[5].text = "[C] Contacts [I] HW Info"
-    screen[6].text = "[X] Chat     [P] Ping"
+    screen[5].text = "[ ]          [I] HW Info"
+    screen[6].text = "[ ]          [ ]"
     screen[7].text = "[T] Terminal [S] Setup"
     screen[8].text = "Ready ..."
     screen.show()
@@ -743,13 +716,13 @@ while True:
         text = editor(text="")
         if not text == "":
             ring()
-        config.msgID3 = random.randint(0, 255)
-        config.msgID2 = random.randint(0, 255)
-        config.msgID1 = random.randint(0, 255)
-        config.msgID0 = msgCounter  # messageID
-        sendMessage(text)
-        message = receiveMessage()
-        msgCounter += 1
+            config.msgID3 = random.randint(0, 255)
+            config.msgID2 = random.randint(0, 255)
+            config.msgID1 = random.randint(0, 255)
+            config.msgID0 = msgCounter  # messageID
+            sendMessage(text)
+            message = receiveMessage()
+            msgCounter += 1
     if keys[0] == "m":
         showMemory()
         ring()
@@ -758,13 +731,17 @@ while True:
     if keys[0] == "b":
         SMPSmode.value = False
     if keys[0] == "e":
-        with open("config.txt", "r") as f:
-            lines = f.readline()
-            print("Printing lines in file:")
-            itm = lines.split(";")
-            for line in itm:
-                print(line)
-            f.close()
+        try:
+            with open("config.txt", "r") as f:
+                lines = f.readlines()
+                print("Printing lines in file:")
+                count = 0
+                for line in lines:
+                    count += 1
+                    print("Line{}: {}".format(count, line.strip()))
+                # f.close()
+        except OSError:
+            print("config.txt does not exist")
     if keys[0] == "i":
         screen[0].text = "System info:"
         screen[1].text = "VSYS power = {:5.2f} V".format(get_VSYSvoltage())
@@ -775,9 +752,7 @@ while True:
         fs_stat = os.statvfs("/")
         screen[3].text = "Disk size " + str(fs_stat[0] * fs_stat[2] / 1024) + " KB"
         screen[4].text = "Free space " + str(fs_stat[0] * fs_stat[3] / 1024) + " KB"
-        screen[5].text = "CPU Temp: {:.2f} degrees C".format(
-            microcontroller.cpu.temperature
-        )
+        screen[5].text = "-"
         screen[6].text = "-"
         screen[7].text = "-"
         screen[8].text = "Ready ..."
@@ -794,30 +769,6 @@ while True:
         keys = keypad.pressed_keys
         while not keys:
             keys = keypad.pressed_keys
-# added a simple ping message
-    if keys[0] == "p":
-        beep()
-        text = ""
-        line = ["0", "1", "2", "3", "4", "5", "6"]
-        line[0] = "Ping from >"
-        line[1] = config.myName
-        line[2] = ""
-        line[3] = ""
-        line[4] = ""
-        line[5] = ""
-        line[6] = ""
-        for r in range(7):
-            text = text + line[r] + "|"
-        print("text: " + text)
-        ring()
-        config.msgID3 = random.randint(0, 255)
-        config.msgID2 = random.randint(0, 255)
-        config.msgID1 = random.randint(0, 255)
-        config.msgID0 = msgCounter  # messageID
-        sendMessage(text)
-        message = receiveMessage()
-        msgCounter += 1
-
     if config.model == "compact":
         if keys[0] == "q":
             KBL.value = True
@@ -825,56 +776,3 @@ while True:
         if keys[0] == "a":
             KBL.value = False
             ring()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

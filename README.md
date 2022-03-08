@@ -28,3 +28,11 @@ New Armachat based on Raspberry Pi PICO an Circuitpython code
 - added additional menu items - currently not developed.
 - added cpu temp to information screen
 - added a very rudimentary ping command - press 'p' to send a ping message. sends user name to reciever.
+
+**Fixes in this repository**
+
+- Much more stable
+- Viewing messages after sending a message does not cause a crash
+- Index issue fixed to prevent random crashes
+- The boot.py file is setup for Compact version. Use previous version if using max version
+- BTW: Save memory to flash does work if you change the file system to write mode by pressing the ALT key when booting and pressing the S key when viewing messages.
