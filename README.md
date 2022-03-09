@@ -24,8 +24,11 @@ New Armachat based on Raspberry Pi PICO an Circuitpython code
 ...
 
 **Kayto Fork Notes**
-- experimental comments in code to test writing to text files.
-- added additional menu items - currently not developed.
+Using code.py and boot.py for collaboration.
+
+The "wip_code.py" is my version for working/experimenting -  will raise pull request as appropriate, in the meantime feel free to comment
+- imnproved fonts and readability
+- experimental comments in code to test writing to text files - perhaps adding a User.text for settings/contacts etc.
 - added cpu temp to information screen
 - added a very rudimentary ping command - press 'p' to send a ping message. sends user name to reciever.
 
