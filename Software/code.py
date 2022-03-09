@@ -18,7 +18,7 @@ from adafruit_simple_text_display import SimpleTextDisplay
 # import adafruit_imageload
 import adafruit_matrixkeypad
 
-from adafruit_bitmap_font import bitmap_font
+# from adafruit_bitmap_font import bitmap_font
 from pwmio import PWMOut
 
 from adafruit_display_text import label
@@ -607,15 +607,6 @@ def radioInit():
 #    f.write("Hello world!\r\n")
 #    f.close()
 
-#          if keys[0] == "ent":
-#              beep()
-#             for r in range(7):
-#                user = text + line[r] + "|"
-#               with open("/user.txt", "n") as fp:
-#                  fp.write('{}\n'.format(user))
-#                 fp.flush()
-#        return text
-
 
 if config.model == "compact":
     KBL = digitalio.DigitalInOut(board.GP14)
@@ -663,12 +654,12 @@ display.show(text_area)
 
 
 # font
-font_file = "fonts/neep-24.pcf"
+# font_file = "fonts/neep-24.pcf"
 # font_file = "fonts/gohufont-14.pcf"
 # font_file = "fonts/Gomme10x20n.pcf"
 # font_file = "fonts/Arial-18.pcf"
-font = bitmap_font.load_font(font_file)
-#font = terminalio.FONT
+# font = bitmap_font.load_font(font_file)
+font = terminalio.FONT
 
 
 # Define pins connected to the chip.
@@ -689,10 +680,9 @@ print("Free memory:")
 print(gc.mem_free())
 EditorScreen = SimpleTextDisplay(
     display=display,
-    font=font,
     title="Armachat EDITOR",
     title_scale=1,
-    text_scale=1,
+    text_scale=2,
     colors=(
         SimpleTextDisplay.YELLOW,
         SimpleTextDisplay.WHITE,
@@ -711,7 +701,7 @@ screen = SimpleTextDisplay(
     font=font,
     title="ARMACHAT {:5.2f}MHz".format(config.freq),
     title_scale=1,
-    text_scale=1,
+    text_scale=2,
     colors=(
         SimpleTextDisplay.GREEN,
         SimpleTextDisplay.WHITE,
@@ -728,10 +718,6 @@ screen = SimpleTextDisplay(
 print("Screen ready,Free memory:")
 print(gc.mem_free())
 while True:
-    # with open("user.txt", "r") as f:
-    #    user = f.readline()
-    #    f.close()
-    # screen[0].text = ">(" + str(config.myID) + ")" + user
     screen[0].text = ">(" + str(config.myID) + ")" + config.myName
     screen[1].text = "[N] New message"
     screen[2].text = "To:(" + str(config.dest0) + ")"
@@ -740,7 +726,7 @@ while True:
         "New:" + str(countMessages("|N|")) + " Undelivered:" + str(countMessages("|S|"))
     )
     screen[5].text = "[ ]          [I] HW Info"
-    screen[6].text = "[ ]          [P] Ping"
+    screen[6].text = "[ ]          [ ]"
     screen[7].text = "[T] Terminal [S] Setup"
     screen[8].text = "Ready ..."
     screen.show()
@@ -810,9 +796,7 @@ while True:
         fs_stat = os.statvfs("/")
         screen[3].text = "Disk size " + str(fs_stat[0] * fs_stat[2] / 1024) + " KB"
         screen[4].text = "Free space " + str(fs_stat[0] * fs_stat[3] / 1024) + " KB"
-        screen[5].text = "CPU Temp: {:.2f} degrees C".format(
-            microcontroller.cpu.temperature
-        )
+        screen[5].text = "-"
         screen[6].text = "-"
         screen[7].text = "-"
         screen[8].text = "Ready ..."
@@ -836,107 +820,3 @@ while True:
         if keys[0] == "a":
             KBL.value = False
             ring()
-
-# added a simple ping message
-    if keys[0] == "p":
-        beep()
-        text = ""
-        line = ["0", "1", "2", "3", "4", "5", "6"]
-        line[0] = "Ping from >"
-        line[1] = config.myName
-        line[2] = ""
-        line[3] = ""
-        line[4] = ""
-        line[5] = ""
-        line[6] = ""
-        for r in range(7):
-            text = text + line[r] + "|"
-        print("text: " + text)
-        ring()
-        config.msgID3 = random.randint(0, 255)
-        config.msgID2 = random.randint(0, 255)
-        config.msgID1 = random.randint(0, 255)
-        config.msgID0 = msgCounter  # messageID
-        sendMessage(text)
-        message = receiveMessage()
-        msgCounter += 1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
