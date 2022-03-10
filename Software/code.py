@@ -11,8 +11,7 @@ import os
 import aesio
 import random
 from binascii import hexlify
-
-# import microcontroller
+import microcontroller
 from adafruit_simple_text_display import SimpleTextDisplay
 
 # import adafruit_imageload
@@ -269,10 +268,14 @@ def receiveMessage():
     # If no packet was received during the timeout then None is returned.
 
     if packet is not None:
+        print("packet -> ")
+        print(packet)
         header = packet[0:16]
         print("Received header:")
+        print("header -> ")
         print(hexlify(header))
-        if packet[15] == 33:  # 33 = sybol ! it is delivery confirmation
+        if len(packet) > 16 and packet[16] == 33:  # 33 = sybol !
+            #                                        it is delivery confirmation
             print("Delivery comfirmation")
             changeMessageStatus(
                 msgID=str(hexlify(packet[8:12]), "utf-8"), old="|S|", new="|D|"
@@ -726,7 +729,7 @@ while True:
         "New:" + str(countMessages("|N|")) + " Undelivered:" + str(countMessages("|S|"))
     )
     screen[5].text = "[ ]          [I] HW Info"
-    screen[6].text = "[ ]          [ ]"
+    screen[6].text = "[ ]          [P] Ping"
     screen[7].text = "[T] Terminal [S] Setup"
     screen[8].text = "Ready ..."
     screen.show()
@@ -796,7 +799,9 @@ while True:
         fs_stat = os.statvfs("/")
         screen[3].text = "Disk size " + str(fs_stat[0] * fs_stat[2] / 1024) + " KB"
         screen[4].text = "Free space " + str(fs_stat[0] * fs_stat[3] / 1024) + " KB"
-        screen[5].text = "-"
+        screen[5].text = "CPU Temp: {:.2f} degrees C".format(
+            microcontroller.cpu.temperature
+        )
         screen[6].text = "-"
         screen[7].text = "-"
         screen[8].text = "Ready ..."
@@ -820,3 +825,27 @@ while True:
         if keys[0] == "a":
             KBL.value = False
             ring()
+    # added a simple ping message
+    if keys[0] == "p":
+        beep()
+        text = ""
+        line = ["0", "1", "2", "3", "4", "5", "6"]
+        line[0] = "Ping from >"
+        line[1] = config.myName
+        line[2] = ""
+        line[3] = ""
+        line[4] = ""
+        line[5] = ""
+        line[6] = ""
+        for r in range(7):
+            text = text + line[r] + "|"
+        print("text: " + text)
+        ring()
+        config.msgID3 = random.randint(0, 255)
+        config.msgID2 = random.randint(0, 255)
+        config.msgID1 = random.randint(0, 255)
+        config.msgID0 = msgCounter  # messageID
+        sendMessage(text)
+        message = receiveMessage()
+        msgCounter += 1
+
