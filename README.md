@@ -37,5 +37,7 @@ The "wip_code.py" is my version for working/experimenting -  will raise pull req
 - Much more stable
 - Viewing messages after sending a message does not cause a crash
 - Index issue fixed to prevent random crashes
-- The boot.py file is setup for Compact version. Use previous version if using max version
+- ~~The boot.py file is setup for Compact version. Use previous version if using max version~~
+- The boot.py file pulls information from config/config.py so it should work for both max and compact models
+- The boot.py file changes include a visual indicator to show remaining time to select safe or write mode
 - BTW: Save memory to flash does work if you change the file system to write mode by pressing the ALT key when booting and pressing the S key when viewing messages.
